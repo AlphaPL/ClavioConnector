@@ -1,0 +1,272 @@
+<!-- ./templates/index.html -->
+<html>
+<head>
+  <!-- link to the ToDo MVC index.css file -->
+  <link rel="stylesheet" href="/static/todomvc-app-css/index.css">
+  <title>Realtime Amazon Inventory</title>
+</head>
+
+<body>
+  <section >
+    <header class="header">
+      <h1>Amazon Inventory</h1>
+    </header>
+
+<div class="custom-select" id='country' style="width:200px;">
+  <select id='country_val'>
+    <option value="UK">UK</option>
+    <option value="BR">Brazil</option>
+    <option value="CA">Canada</option>
+    <option value="MX">Mexico</option>
+    <option value="US">United States</option>
+    <option value="AE">United Arab Emirates </option>
+    <option value="DE">Germany</option>
+    <option value="EG">Egypt</option>
+    <option value="ES">Spain</option>
+    <option value="FR">France</option>
+    <option value="IN">India</option>
+    <option value="IT">Italy</option>
+    <option value="NL">Toyota</option>
+    <option value="SA">Saudi Arabia</option>
+    <option value="SE">Sweden</option>
+    <option value="TR">Turkey</option>
+    <option value="SG">Singapore</option>
+    <option value="AU">Australia</option>
+    <option value="JP">Japan</option>
+
+  </select>
+</div>
+    <button id="prevPage"> Prev Page </button>
+    <button id="nextPage"> Next Page</button>
+    <button id="impall"> Import all on this page</button>
+    <input type="text" id="name" placeholder="Type in specific product"> </input>
+    <section>
+      <table class="styled-table">
+        <div>
+          <tr><th></th><th>Image</th><th>Name</th><th>SKU</th><th>ASIN</th><th>QUANTITY</th><th>PRICE</th><th>In Shopify</th><th></th></tr>
+        </div>
+      </table>
+    </section>
+    
+  </section>
+
+  <script src="https://js.pusher.com/4.1/pusher.min.js"></script>
+  <script>
+    let pageNum = 1
+    // Enable pusher logging for debugging - don't include this in production
+    // function that makes API call to add an item
+    function addItem(data) {
+      // if enter key is pressed on the form input, add new item
+      let item = document.querySelector('.new-todo');
+      let e = document.getElementById('country_val');
+      console.log(e)
+      var strUser = e.options[e.selectedIndex].value;
+      data['country_of_origin'] = strUser
+      console.log(strUser, pageNum)
+      try {
+        data['restock-date'] = document.getElementById('input'+data['asin1']).value
+      } catch (error) {
+        console.error(error);
+        // expected output: ReferenceError: nonExistentFunction is not defined
+        // Note - error messages will vary depending on browser
+      }
+
+      fetch('/add-todo', {
+        method: 'post',
+        body: JSON.stringify(data)
+      })
+      .then(resp => {
+        // empty form input once a response is received
+        alert("Item imported!")
+        let x = document.getElementById(data['seller-sku'])
+        console.log(x)
+        x.style.visibility='visible';
+      });
+    }
+
+    // function that makes API call to remove an item
+    function removeItem(id) {
+      fetch(`/remove-todo/${id}`);
+    }
+
+    function fetchProducts(country, pageNum, prodname) {
+        fetch('/items?country='+ country+"&pageNum="+pageNum+"&prodname="+prodname, {
+          method: 'get'
+        })
+        .then(resp => {
+          // empty form input once a response is received
+          console.log(resp)
+          return resp.json()
+        })
+        .then(resp => {
+          // empty form input once a response is received
+          console.log(resp)
+          for(item in resp){
+            console.log(item)
+            appendToList(resp[item])
+          }
+            for(item in resp){
+              console.log(item)
+              addEvent(resp[item])
+            }
+          return resp
+        }).catch(error => {
+          alert('Error, refresh website:', error);
+        });
+    }
+
+  window.onload = function() {
+      console.log('wtf')
+      console.log(document.getElementById("country"))
+      fetchProducts("UK", pageNum, '')
+
+
+        fetch('/get_mapping', {
+          method: 'get'
+        })
+        .then(resp => {
+          // empty form input once a response is received
+          console.log('mapping', resp)
+          return resp.json()
+        })
+        .then(resp => {
+          // empty form input once a response is received
+          console.log(resp)
+          for(item in resp){
+            console.log(item)
+          }
+          return resp
+        });
+
+        document.getElementById('country').onchange = function(e){
+          document.querySelector(".styled-table").innerHTML = ""
+          document.querySelector(".styled-table").innerHTML += "<tr><th>Import to Shopify</th><th>Image</th><th>Name</th><th>SKU</th><th>ASIN</th><th>QUANTITY</th><th>PRICE</th><th>Description</th><th></th></tr>";
+          var strUser = e.target.options[e.target.selectedIndex].value;
+          console.log('dulut', event)
+          fetchProducts(strUser, pageNum, '')
+        }; 
+        console.log('Setting onclick for prevpage')
+        console.log(document.getElementById("prevPage"))
+        document.getElementById("prevPage").onclick = function(ev) {
+          document.querySelector(".styled-table").innerHTML = ""
+          document.querySelector(".styled-table").innerHTML += "<tr><th>Import to Shopify</th><th>Image</th><th>Name</th><th>SKU</th><th>ASIN</th><th>QUANTITY</th><th>PRICE</th><th>Description</th><th></th></tr>";
+          console.log('wtf')
+          pageNum = pageNum - 1
+          let e = document.getElementById('country_val');
+          console.log(e)
+          var strUser = e.options[e.selectedIndex].value;
+          fetchProducts(strUser, pageNum)
+        }
+        console.log('Setting onclick for nextPage')
+
+        document.getElementById("nextPage").onclick = function(ev) {
+          document.querySelector(".styled-table").innerHTML = ""
+          document.querySelector(".styled-table").innerHTML += "<tr><th>Import to Shopify</th><th>Image</th><th>Name</th><th>SKU</th><th>ASIN</th><th>QUANTITY</th><th>PRICE</th><th>Description</th><th></th></tr>";
+          console.log('wtf')
+          pageNum = pageNum + 1
+          let e = document.getElementById('country_val');
+          console.log(e)
+          var strUser = e.options[e.selectedIndex].value;
+          fetchProducts(strUser, pageNum)
+        }
+
+        document.getElementById("impall").onclick = function(ev) {
+          var inputs = document.getElementsByClassName('button1');
+          for (var i = 0; i < inputs.length; i++) {
+            inputs[i].click();
+          }
+        }
+
+        document.getElementById("name").onchange = function(ev) {
+          document.querySelector(".styled-table").innerHTML = ""
+          document.querySelector(".styled-table").innerHTML += "<tr><th>Import to Shopify</th><th>Image</th><th>Name</th><th>SKU</th><th>ASIN</th><th>QUANTITY</th><th>PRICE</th><th>Description</th><th></th></tr>";
+          console.log(ev.target.value)
+          let e = document.getElementById('country_val');
+          console.log(e)
+          var strUser = e.options[e.selectedIndex].value;
+          fetchProducts(strUser, pageNum, ev.target.value)
+        }
+};
+
+    // function that makes API call to update an item 
+    // toggles the state of the item between complete and
+    // incomplete states
+    function toggleComplete(elem) {
+      let id = elem.dataset.id,
+      completed = (elem.dataset.completed == "1" ? "0" : "1");
+      fetch(`/update-todo/${id}`, {
+        method: 'post',
+        body: JSON.stringify({ completed })
+      });
+    }
+    
+    // helper function to append new ToDo item to current ToDo list
+    function appendToList(data) {
+      console.log(data)
+      let html = `
+      <tr >
+        <th>
+          <div>
+          </div>
+        </th>
+        <th>
+          <div>
+          <img src="${data['SmallImage']}" >
+          </div>
+        </th>
+        <th>
+          <div>
+            <label>${data['item-name']}</label>
+          </div>
+        </th>
+        <th>
+          <div class="view">
+            <label>${data['seller-sku']}</label>
+          </div>
+        </th>
+        <th>
+          <div class="view">
+            <label>${data['asin1']}</label>
+          </div>
+        </th>
+        <th>
+          <div class="view">
+            <label>${data['quantity']}</label>
+          </div>
+        </th>
+        <th>
+          <div class="view">
+            <label>${data['price']}</label>
+          </div>
+
+        </th>  
+        <th>
+          ${data['quantity'] == '' ? (data['in-shopify'] + '<br/>Set restock date <br/> <input type="text" value="' + data['restock-date']+ '" id="input' + data['asin1'] + '"> </text>') : data['in-shopify'] }
+        </th>     
+        <th>
+          <button class="button1" id="${data['seller-sku']}">
+            Send to Shopify
+          </button>
+
+        </th>
+      </tr>`;
+      let list = document.querySelector(".styled-table")
+      list.innerHTML += html;
+    };
+
+    // helper function to append new ToDo item to current ToDo list
+    function addEvent(data) {
+
+      document.getElementById(data['seller-sku']).onclick = function(){
+        let x = document.getElementById(data['seller-sku'])
+        console.log(x)
+        x.style.visibility='hidden';
+        addItem(data)
+       
+
+      };
+      console.log('added event', data['seller-sku'])
+    };
+  </script>
+</body>
+</html>
